@@ -9,7 +9,7 @@ from .utils import paginator
 
 def index(request):
     title = 'Последние обновления на сайте.'
-    posts_list = Post.objects.all()
+    posts_list = Post.objects.select_related().all()
     page_obj = paginator(request, posts_list, POSTS_LIMIT)
     context = {
         'title': title,
@@ -20,7 +20,7 @@ def index(request):
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    posts = Post.objects.filter(group=group)
+    posts = Post.objects.select_related('group').filter(group=group)
     page_obj = paginator(request, posts, POSTS_LIMIT)
     context = {
         'group': group,
@@ -31,17 +31,16 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    a_posts = Post.objects.filter(author=author)
+    a_posts = Post.objects.select_related('author').filter(author=author)
     a_posts_count = a_posts.count()
     page_obj = paginator(request, a_posts, POSTS_LIMIT)
     following = None
     self_sub = False
     if request.user.is_authenticated:
-        user = User.objects.get(username=username)
-        if request.user == user:
+        if request.user == author:
             self_sub = True
         following = Follow.objects.filter(
-            user=request.user, author=user).exists
+            user=request.user, author=author).exists
     context = {
         'author': author,
         'a_posts_count': a_posts_count,
@@ -54,7 +53,7 @@ def profile(request, username):
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    a_posts = Post.objects.filter(author=post.author)
+    a_posts = Post.objects.select_related('author').filter(author=post.author)
     a_posts_count = a_posts.count()
     comments = Comment.objects.filter(post=post.pk)
     form = CommentForm(request.POST or None)
@@ -71,7 +70,10 @@ def post_detail(request, post_id):
 def post_create(request):
     title = 'Новый пост'
     button = 'Добавить'
-    form = PostForm(request.POST or None)
+    form = PostForm(
+        request.POST or None,
+        files=request.FILES or None
+    )
     if form.is_valid():
         post = form.save(commit=False)
         post.author = request.user
@@ -123,32 +125,30 @@ def add_comment(request, post_id):
     return redirect('posts:post_detail', post_id=post_id)
 
 
-# todo! down
 @login_required
 def follow_index(request):
     title = 'Последние посты авторов, на которых вы подписаны'
-    posts_list = Post.objects.filter(author__following__user=request.user)
+    posts_list = Post.objects.select_related('author').filter(
+        author__following__user=request.user)
     page_obj = paginator(request, posts_list, POSTS_LIMIT)
     context = {
         'title': title,
-        'page_obj': page_obj
+        'page_obj': page_obj,
     }
     return render(request, 'posts/follow.html', context)
 
 
 @login_required
 def profile_follow(request, username):
-    user = User.objects.get(username=username)
+    user = get_object_or_404(User, username=username)
     if request.user == user:
         return redirect('posts:profile', username)
-    if Follow.objects.filter(user=request.user, author=user).exists():
-        profile_unfollow(request, username)
-    Follow.objects.create(user=request.user, author=user)
+    Follow.objects.get_or_create(user=request.user, author=user)
     return redirect('posts:profile', username)
 
 
 @login_required
 def profile_unfollow(request, username):
-    user = User.objects.get(username=username)
+    user = get_object_or_404(User, username=username)
     Follow.objects.filter(user=request.user, author=user).delete()
     return redirect('posts:profile', username)

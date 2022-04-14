@@ -85,6 +85,7 @@ class PostFormsTests(TestCase):
         fields = {
             ordered_posts.text: form_data['text'],
             ordered_posts.group.pk: form_data['group'],
+            ordered_posts.image: f'posts/{uploaded.name}',
         }
         for field, value in fields.items():
             with self.subTest():

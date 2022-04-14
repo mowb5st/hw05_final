@@ -4,7 +4,6 @@
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
   <h1>{{ title }}</h1>
-    {% comment%} {% cache 20 index_page %} {% endcomment %}
   {% include 'posts/includes/switcher.html' %}
   {% for post in page_obj %}
     <article>
@@ -29,7 +28,6 @@
     <hr>
   {% endif %}
 {% endfor %}
-{% comment%} {% endcache %} {% endcomment %}
 {% include 'posts/includes/paginator.html' %}
 </div>
 {% endblock %}

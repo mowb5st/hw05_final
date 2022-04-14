@@ -23,19 +23,6 @@ class Post(models.Model):
         verbose_name='Группа',
         help_text='Группа, к которой будет относиться пост',
     )
-    # comment = models.ForeignKey(
-    #     'Comment',
-    #     blank=True,
-    #     null=True,
-    #     on_delete=models.CASCADE,
-    #     related_name='Comment',
-    #     verbose_name='Комментарий',
-    #     help_text='Комментарий к посту',
-    # )
-
-    # Поле для картинки (необязательное)
-    # Аргумент upload_to указывает директорию,
-    # в которую будут загружаться пользовательские файлы.
     image = models.ImageField(
         'Картинка',
         upload_to='posts/',
@@ -85,14 +72,20 @@ class Comment(models.Model):
 
 
 class Follow(models.Model):
+    unique = models.UniqueConstraint(
+        fields=['user', 'author'],
+        name='unique_following'
+    )
     user = models.ForeignKey(
         User,
+        verbose_name='Подписчик',
         related_name='follower',
         help_text='Пользователь, который подписывается',
         on_delete=models.CASCADE,
     )
     author = models.ForeignKey(
         User,
+        verbose_name='На кого подписался',
         related_name='following',
         help_text='Пользователь, на которого подписываются',
         on_delete=models.CASCADE,

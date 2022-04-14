@@ -418,6 +418,7 @@ class SubsriptionTestCase(TestCase):
         cls.user_main = User.objects.create_user(username='Main User')
         cls.user_one = User.objects.create_user(username='First User')
         cls.user_two = User.objects.create_user(username='Second User')
+        cls.user_three = User.objects.create_user(username='Third User')
         cls.group = Group.objects.create(
             title='Cached Group',
             slug='cached-group',
@@ -431,50 +432,80 @@ class SubsriptionTestCase(TestCase):
             group=cls.group,
         )
         time.sleep(0.01)
+        cls.unexpected_post = Post.objects.create(
+            author=cls.user_three,
+            text='Unexpected text',
+            group=cls.group,
+        )
+        time.sleep(0.01)
         cls.post_two = Post.objects.create(
             author=cls.user_two,
             text=text_two,
             group=cls.group
         )
-        cls.first_obj = Follow.objects.create(
-            user=cls.user_main, author=cls.user_one)
-        cls.second_obj = Follow.objects.create(
-            user=cls.user_main, author=cls.user_two)
 
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user_main)
+        Follow.objects.create(user=self.user_main, author=self.user_one)
+        Follow.objects.create(user=self.user_main, author=self.user_two)
 
-    def test_sub_for_other_users(self):
-        """Create and delete subscriptions for two other users"""
-        first_sub = Follow.objects.filter(
-            user=self.user_main, author=self.user_one)
-        second_sub = Follow.objects.filter(
-            user=self.user_main, author=self.user_two)
-        self.assertTrue(first_sub.exists)
-        self.assertTrue(second_sub.exists)
-        first_sub = first_sub.delete()
-        second_sub = second_sub.delete()
-        self.assertNotEqual(self.first_obj, first_sub)
-        self.assertNotEqual(self.second_obj, second_sub)
-
-    def test_sub_posts_visibility(self):
-        """Посты появились в ленте подписок"""
+    def test_sub_creation(self):
+        """Проверка создания подписки"""
+        viewname = 'posts:follow_index'
         first_index = 0
-        reverse_name = 'posts:follow_index'
-        context_obj = 'page_obj'
-        Follow.objects.filter(
-            user=self.user_main, author=self.user_one).delete()
-        response = ViewsFormsTestCase.template_for_context_tests(
-            self, reverse_name, context_obj)
-        post_two = response.context.get(context_obj)[first_index]
-        post_context_fields = {
-            post_two.pk: self.post_two.pk,
-            post_two.text: self.post_two.text,
-            post_two.author.username: self.post_two.author.username,
-            post_two.group.title: self.post_two.group.title,
-            post_two.group.pk: self.post_two.group.pk,
+
+        second_index = 1
+        response = self.authorized_client.get(reverse(viewname))
+        first_obj = response.context.get('page_obj')[first_index]
+        second_obj = response.context.get('page_obj')[second_index]
+        first_obj_fields = {
+            first_obj.pk: self.post_two.pk,
+            first_obj.text: self.post_two.text,
+            first_obj.author.pk: self.post_two.author.pk,
+            first_obj.author.username: self.post_two.author.username,
+            first_obj.group.pk: self.post_two.group.pk,
+            first_obj.group.title: self.post_two.group.title,
         }
-        for field, expected in post_context_fields.items():
+        second_obj_fields = {
+            second_obj.pk: self.post_one.pk,
+            second_obj.text: self.post_one.text,
+            second_obj.author.pk: self.post_one.author.pk,
+            second_obj.author.username: self.post_one.author.username,
+            second_obj.group.pk: self.post_one.group.pk,
+            second_obj.group.title: self.post_one.group.title,
+        }
+        for value, expected in first_obj_fields.items():
             with self.subTest():
-                self.assertEqual(field, expected)
+                self.assertEqual(value, expected)
+        for value, expected in second_obj_fields.items():
+            with self.subTest():
+                self.assertEqual(value, expected)
+
+    def test_sub_delition(self):
+        """Проверка удаления подписки"""
+        viewname = 'posts:follow_index'
+        page_obj = 'page_obj'
+        cached_response = self.authorized_client.get(reverse(
+            viewname))
+        count_of_cached_posts = len(cached_response.context[page_obj])
+        sub_relationships = {
+            self.user_one: self.user_main,
+            self.user_two: self.user_main,
+        }
+        for author, user in sub_relationships.items():
+            Follow.objects.filter(user=user, author=author).delete()
+        refreshed_response = self.authorized_client.get(reverse(
+            viewname))
+        count_of_refreshed_posts = len(refreshed_response.context[page_obj])
+        self.assertEqual(count_of_refreshed_posts, count_of_cached_posts - 2)
+
+    def test_sub_posts_not_visible(self):
+        """Посты не появились в ленте подписок другого пользователя"""
+        self.authorized_client.force_login(self.user_three)
+        viewname = 'posts:follow_index'
+        context_obj = 'page_obj'
+        expected_posts_count = 0
+        response = self.authorized_client.get(reverse(viewname))
+        posts_count = len(response.context.get(context_obj))
+        self.assertEqual(posts_count, expected_posts_count)
