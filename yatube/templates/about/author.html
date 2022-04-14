@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ label }}{% endblock %}
+{% block content %}
+  <h1>{{ header }}</h1>
+  <p>
+    <div class="paragraph">
+    <p> {{ text }} </p>
+    </div>
+  </p>
+    Мои социальные сети:
+      <div class="paragraph">
+        <a href='{{ git }}' target='_blank'> Github </a>
+      </div>
+      <div class="paragraph">
+        <a href='{{ vk }}' target='_blank'> VK </a>
+      </div>
+{% endblock %}

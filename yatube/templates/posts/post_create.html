@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-8 p-5">
+      <div class="card">
+        <div class="card-header">{{ title }}</div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% if is_edit %}
+              <action="{% url 'posts:post_edit' form.instance.pk %}">
+            {% else %}
+              <action="{% url 'posts:post_create' %}">
+            {% endif %}
+            {% csrf_token %}
+          <div class="form-group row my-3 p-3">
+            <label> 
+              {{ form.text.label }}
+              <span class="required text-danger">*</span>
+            </label>
+          <textarea class="form-control" placeholder="{{ form.text.help_text }}" required id={{ form.text }} </textarea>
+          <small class="form-text text-muted">{{ form.text.help_text }}</small>
+        </div>
+        <div class="form-group row my-3 p-3">
+          <label>{{ form.group.label }}</label>
+          <select class="form-control"
+            id={{ form.group }}
+            </select>
+            <small class="form-text text-muted">{{ form.group.help_text }}</small>
+        </div>
+        <div class="form-group row my-3 p-3">
+          <label>{{ form.image.label}}</label>
+          <input type="file" name="image" accept="image/*" class="form-control" id="id_image">
+        </div>
+        <div class="d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary">{{ button }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+{% endblock %}
