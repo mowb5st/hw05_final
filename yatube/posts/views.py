@@ -9,7 +9,7 @@ from .utils import paginator
 
 def index(request):
     title = 'Последние обновления на сайте.'
-    posts_list = Post.objects.select_related().all()
+    posts_list = Post.objects.select_related('author').all()
     page_obj = paginator(request, posts_list, POSTS_LIMIT)
     context = {
         'title': title,

@@ -72,10 +72,7 @@ class Comment(models.Model):
 
 
 class Follow(models.Model):
-    unique = models.UniqueConstraint(
-        fields=['user', 'author'],
-        name='unique_following'
-    )
+
     user = models.ForeignKey(
         User,
         verbose_name='Подписчик',
@@ -90,3 +87,10 @@ class Follow(models.Model):
         help_text='Пользователь, на которого подписываются',
         on_delete=models.CASCADE,
     )
+
+    class Meta:
+        db_table = 'subsription'
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'author'],
+                                    name='unique_following')
+        ]

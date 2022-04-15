@@ -450,13 +450,12 @@ class SubsriptionTestCase(TestCase):
         Follow.objects.create(user=self.user_main, author=self.user_one)
         Follow.objects.create(user=self.user_main, author=self.user_two)
 
-    def test_sub_creation(self):
-        """Проверка создания подписки"""
-        viewname = 'posts:follow_index'
+    def test_sub_creatin_post_visibility(self):
+        """Проверка появления постов подписки"""
+        view_name = 'posts:follow_index'
         first_index = 0
-
         second_index = 1
-        response = self.authorized_client.get(reverse(viewname))
+        response = self.authorized_client.get(reverse(view_name))
         first_obj = response.context.get('page_obj')[first_index]
         second_obj = response.context.get('page_obj')[second_index]
         first_obj_fields = {
@@ -482,12 +481,12 @@ class SubsriptionTestCase(TestCase):
             with self.subTest():
                 self.assertEqual(value, expected)
 
-    def test_sub_delition(self):
-        """Проверка удаления подписки"""
-        viewname = 'posts:follow_index'
+    def test_sub_delition_post_visibility(self):
+        """Проверка удаления постов подписки"""
+        view_name = 'posts:follow_index'
         page_obj = 'page_obj'
         cached_response = self.authorized_client.get(reverse(
-            viewname))
+            view_name))
         count_of_cached_posts = len(cached_response.context[page_obj])
         sub_relationships = {
             self.user_one: self.user_main,
@@ -496,7 +495,7 @@ class SubsriptionTestCase(TestCase):
         for author, user in sub_relationships.items():
             Follow.objects.filter(user=user, author=author).delete()
         refreshed_response = self.authorized_client.get(reverse(
-            viewname))
+            view_name))
         count_of_refreshed_posts = len(refreshed_response.context[page_obj])
         self.assertEqual(count_of_refreshed_posts, count_of_cached_posts - 2)
 
@@ -509,3 +508,37 @@ class SubsriptionTestCase(TestCase):
         response = self.authorized_client.get(reverse(viewname))
         posts_count = len(response.context.get(context_obj))
         self.assertEqual(posts_count, expected_posts_count)
+
+
+class SubscriptionManageTestCase(TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.user_main = User.objects.create_user(username='Main User')
+        cls.user_one = User.objects.create_user(username='First User')
+        cls.user_two = User.objects.create_user(username='Second User')
+
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user_main)
+
+    def test_sub_creation(self):
+        """Проверка создания подписки"""
+        view_name = 'posts:profile_follow'
+        kwargs = {'username': self.user_one}
+        self.authorized_client.get(reverse(view_name, kwargs=kwargs))
+        expected_follow_one = Follow.objects.filter(
+            user=self.user_main, author=self.user_one).exists()
+        self.assertTrue(expected_follow_one)
+
+    def test_sub_delition(self):
+        """Проверка создания подписки"""
+        view_name = 'posts:profile_follow'
+        kwargs = {'username': self.user_one}
+        self.authorized_client.get(reverse(view_name, kwargs=kwargs))
+        expected_follow_one = Follow.objects.filter(
+            user=self.user_main, author=self.user_one).exists()
+        self.authorized_client.get(reverse(view_name, kwargs=kwargs))
+        expected_follow_one_deleted = Follow.objects.filter(
+            user=self.user_main, author=self.user_one).exists()
+        self.assertEqual(expected_follow_one, expected_follow_one_deleted)
