@@ -510,7 +510,7 @@ class SubsriptionTestCase(TestCase):
         self.assertEqual(posts_count, expected_posts_count)
 
 
-class SubscriptionManageTestCase(TestCase):
+class SubscriptionViewsTestCase(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -521,24 +521,23 @@ class SubscriptionManageTestCase(TestCase):
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user_main)
+        view_name = 'posts:profile_follow'
+        kwargs = {'username': self.user_one}
+        self.authorized_client.get(reverse(view_name, kwargs=kwargs))
 
     def test_sub_creation(self):
         """Проверка создания подписки"""
-        view_name = 'posts:profile_follow'
-        kwargs = {'username': self.user_one}
-        self.authorized_client.get(reverse(view_name, kwargs=kwargs))
-        expected_follow_one = Follow.objects.filter(
+        expected_follow = Follow.objects.filter(
             user=self.user_main, author=self.user_one).exists()
-        self.assertTrue(expected_follow_one)
+        self.assertTrue(expected_follow)
 
     def test_sub_delition(self):
-        """Проверка создания подписки"""
-        view_name = 'posts:profile_follow'
+        """Проверка удаления подписки"""
+        view_name_unfollow = 'posts:profile_unfollow'
         kwargs = {'username': self.user_one}
-        self.authorized_client.get(reverse(view_name, kwargs=kwargs))
-        expected_follow_one = Follow.objects.filter(
+        expected_follow = Follow.objects.filter(
             user=self.user_main, author=self.user_one).exists()
-        self.authorized_client.get(reverse(view_name, kwargs=kwargs))
-        expected_follow_one_deleted = Follow.objects.filter(
+        self.authorized_client.get(reverse(view_name_unfollow, kwargs=kwargs))
+        expected_follow_deleted = Follow.objects.filter(
             user=self.user_main, author=self.user_one).exists()
-        self.assertEqual(expected_follow_one, expected_follow_one_deleted)
+        self.assertNotEqual(expected_follow, expected_follow_deleted)
