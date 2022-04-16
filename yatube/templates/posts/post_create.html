@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load thumbnail %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
   <div class="row justify-content-center">
@@ -8,6 +9,9 @@
         <div class="card-body">
           <form method="post" enctype="multipart/form-data">
             {% if is_edit %}
+              {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+              <img class="card-img my-2" src="{{ im.url }}">
+              {% endthumbnail %}
               <action="{% url 'posts:post_edit' form.instance.pk %}">
             {% else %}
               <action="{% url 'posts:post_create' %}">

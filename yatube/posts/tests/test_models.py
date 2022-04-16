@@ -43,7 +43,7 @@ class PostModelTest(TestCase):
         """help_text в полях совпадает с ожидаемым."""
         post = PostModelTest.post
         field_help_texts = {
-            'text': 'Текст нового поста',
+            'text': 'Текст поста',
             'group': 'Группа, к которой будет относиться пост',
         }
         for field, expected_value in field_help_texts.items():

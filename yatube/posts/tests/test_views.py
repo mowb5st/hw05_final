@@ -521,12 +521,12 @@ class SubscriptionViewsTestCase(TestCase):
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user_main)
-        view_name = 'posts:profile_follow'
-        kwargs = {'username': self.user_one}
-        self.authorized_client.get(reverse(view_name, kwargs=kwargs))
 
     def test_sub_creation(self):
         """Проверка создания подписки"""
+        view_name = 'posts:profile_follow'
+        kwargs = {'username': self.user_one}
+        self.authorized_client.get(reverse(view_name, kwargs=kwargs))
         expected_follow = Follow.objects.filter(
             user=self.user_main, author=self.user_one).exists()
         self.assertTrue(expected_follow)
@@ -535,6 +535,7 @@ class SubscriptionViewsTestCase(TestCase):
         """Проверка удаления подписки"""
         view_name_unfollow = 'posts:profile_unfollow'
         kwargs = {'username': self.user_one}
+        Follow.objects.create(user=self.user_main, author=self.user_one)
         expected_follow = Follow.objects.filter(
             user=self.user_main, author=self.user_one).exists()
         self.authorized_client.get(reverse(view_name_unfollow, kwargs=kwargs))

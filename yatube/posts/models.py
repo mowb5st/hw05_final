@@ -4,12 +4,22 @@ from django.db import models
 User = get_user_model()
 
 
-class Post(models.Model):
+class CreatedModel(models.Model):
+    """Абстрактная модель. Добавляет дату создания."""
+    created = models.DateTimeField(
+        'Дата создания',
+        auto_now_add=True
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Post(CreatedModel):
     text = models.TextField(
         verbose_name='Текст поста',
-        help_text='Текст нового поста',
+        help_text='Текст поста',
     )
-    pub_date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -30,13 +40,13 @@ class Post(models.Model):
     )
 
     class Meta:
-        ordering = ['-pub_date']
+        ordering = ['-created']
 
     def __str__(self):
         return self.text[:15]
 
 
-class Group(models.Model):
+class Group(CreatedModel):
     title = models.CharField(max_length=200)
     slug = models.SlugField(
         unique=True,
@@ -47,7 +57,7 @@ class Group(models.Model):
         return self.title
 
 
-class Comment(models.Model):
+class Comment(CreatedModel):
     post = models.ForeignKey(
         Post,
         related_name='comments',
@@ -62,7 +72,6 @@ class Comment(models.Model):
         verbose_name='Текст комментария',
         help_text='Напишите комментарий',
     )
-    created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created']
@@ -71,7 +80,7 @@ class Comment(models.Model):
         return self.text
 
 
-class Follow(models.Model):
+class Follow(CreatedModel):
 
     user = models.ForeignKey(
         User,
